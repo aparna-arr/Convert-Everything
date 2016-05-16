@@ -99,6 +99,7 @@ void FileInit::readIn(std::string infilename)
 
 void FileInit::readInWig(ifstream& fp)
 {
+	cerr << "readInWig()" << endl;
 	string line;
 
 	string curr_chr = "INIT";
@@ -136,7 +137,7 @@ void FileInit::readInWig(ifstream& fp)
 			Peak tmp;
 			tmp.start = pos;
 			tmp.end = pos + span;
-			(*tmp.value) = value;
+			tmp.value = value;
 	
 			(*peaks)[curr_chr].push_back(tmp);
 		}
@@ -152,6 +153,7 @@ void FileInit::readInWig(ifstream& fp)
 
 void FileInit::readInBed(ifstream& fp)
 {
+	cerr << "readInBed()" << endl;
 	string line;
 
 	while(getline(fp, line) && !fp.bad())
@@ -171,7 +173,7 @@ void FileInit::readInBed(ifstream& fp)
 		Peak curr;
 		curr.start = start;
 		curr.end = end;
-		*(curr.value) = value;
+		curr.value = value;
 	
 		(*peaks)[chr].push_back(curr);	
 	}
@@ -182,10 +184,12 @@ void FileInit::readInBed(ifstream& fp)
 }
 void FileInit::readInBedGraph(ifstream& fp)
 {
+	cerr << "readInBedGraph()" << endl;
 	string line;
 
 	while(getline(fp, line) && !fp.bad())
 	{
+		cerr << "debug: readInBedGraph(): line [" << line << "]" << endl;
 		string chr;
 		int start, end;
 		double value;
@@ -197,18 +201,26 @@ void FileInit::readInBedGraph(ifstream& fp)
 			cerr << "skipping line [" << line << "]" << endl;
 			continue;
 		}
-		
+	
+		cerr << "debug: readInBedGraph(): chr [" << chr << "] start [" << start << "] end [" << end << "] value [" << value << "]" << endl;
+	
 		Peak curr;
 		curr.start = start;
 		curr.end = end;
-		*(curr.value) = value;
+		
+		cerr << "debug: readInBedGraph(): before assign value" << endl;
 	
+		curr.value = value;
+	
+		cerr << "debug: readInBedGraph(): before push_back()" << endl;	
+		
 		(*peaks)[chr].push_back(curr);	
 	}
 
 	if ((*peaks).empty())	
 		throw (1); // throw error
-
+	
+	cerr << "end readInBedGraph()"<<endl;
 }
 
 void FileInit::readInSam(ifstream& fp)
@@ -324,7 +336,7 @@ void File::smooth(void)
 					Peak tmp;
 					tmp.start = (i - smooth_win)/2 - smooth_shift/2;
 					tmp.end = tmp.start + smooth_shift/2 - 1;
-					*(tmp.value) = (curr_avg / smooth_win - 1);
+					tmp.value = (curr_avg / smooth_win - 1);
 					window_bins.push_back(tmp);
 				}
 			}
@@ -350,22 +362,22 @@ void File::smooth(void)
 				{
 					if (peakIter->end > i + shift_end)
 					{	
-						circ_ar[circ_index] += *(peakIter->value) / (double) (peakIter->end - peakIter->start) * shift_end;
+						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * shift_end;
 					} // if
 					else 
 					{
-						circ_ar[circ_index] += *(peakIter->value) / (double) (peakIter->end - peakIter->start) * (peakIter->end - i);
+						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * (peakIter->end - i);
 					} // else
 				} // if
 				else
 				{
 					if (peakIter->end > i + shift_end)
 					{
-						circ_ar[circ_index] += *(peakIter->value) / (double) (peakIter->end - peakIter->start) * (i + shift_end - peakIter->start);
+						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * (i + shift_end - peakIter->start);
 					} // if
 					else
 					{
-						circ_ar[circ_index] += *(peakIter->value);
+						circ_ar[circ_index] += peakIter->value;
 					} // else
 				} // else
 
@@ -379,15 +391,71 @@ void File::smooth(void)
 	} // for each chr	
 }
 
+// expect sorted & bed file
 void File::blacklist_remove(void) 
 {
+	ifstream bfile(blacklistfile);
+	
+	if (!bfile.is_open())
+		throw(1); // throw error
+
+	string line;
+		
+	unordered_map<string, vector<Peak>> blacklist;
+
+	while(getline(bfile, line) && !bfile.bad())
+	{
+		string chr;
+		int start, end;
+
+		stringstream ss(line);
+
+		if (ss >> chr >> start >> end)
+		{
+			Peak tmp;
+			tmp.start = start;
+			tmp.end = end;
+
+			blacklist[chr].push_back(tmp);
+		}
+	}
+
+	bfile.close();
+
+	for (auto iter = (*peaks).begin(); iter != (*peaks).end(); iter++)
+	{
+		if (blacklist[iter->first].size() == 0)
+			continue;
+
+		vector<Peak>::iterator peakIter = (iter->second).begin();
+		vector<Peak>::iterator rmIter = (iter->second).end() - 1;
+
+		for (auto it = blacklist[iter->first].begin(); it != blacklist[iter->first].end(); it++)
+		{
+			if (peakIter == (iter->second).end())
+				break;
+
+			if (it->end < peakIter->start)
+				continue;
+
+			while(peakIter < (iter->second).end() - 1 && it->start > peakIter->end)
+				peakIter++;
+
+
+			if (it->start <= peakIter->end && it->end >= peakIter->start)
+			{
+				 // remove this one
+				 peakIter = (iter->second).erase(peakIter);
+			}
+		}
+	}
 }
 
 void File::clean(void)
 {
 	ifstream chrfile(cleanfile);
 	
-	if (!chrfile.is_open)
+	if (!chrfile.is_open())
 		throw (1); // throw error
 
 	string line;
@@ -429,9 +497,38 @@ void File::clean(void)
 void Wig::output(bool ucsc)
 {		
 	File::output(ucsc);
-	cerr << "Wig output" << endl; 
+	cerr << "Wig output" << endl;
+
+	ofstream out(outfile);
+
+	if(!out.is_open())
+		throw(1); // throw error
+
+// FIXME this is not outputting
+	if (ucsc)
+	{
+		out << "track type=wiggle_0 name=\"" << outfile << "\" description=\"" << outfile << "\"" << endl;
+	}
+
+	for (vector<string>::iterator iter = chr_list.begin(); iter != chr_list.end(); iter++)
+	{
+		int span = -1;
+		for (vector<Peak>::iterator peakIt = (*peaks)[*iter].begin(); peakIt != (*peaks)[*iter].end(); peakIt++)
+		{
+			if (peakIt->end - peakIt->start != span)
+			{
+				span = peakIt->end - peakIt->start;
+				out << "variableStep chrom=" << *iter << " span=" << span << endl;
+			}
+			
+			out << peakIt->start << "\t" << peakIt->value << endl;
+		}
+	}	
+
+	out.close(); 
 }
 
+// FIXME remove this option
 void Bed::output(bool ucsc)
 {
 	File::output(ucsc);
@@ -442,10 +539,50 @@ void Bed5::output(bool ucsc)
 {
 	File::output(ucsc);
 	cerr << "Bed5 output" << endl; 
+
+	ofstream out(outfile);
+
+	if(!out.is_open())
+		throw(1); // throw error
+
+	if (ucsc)
+	{
+		out << "track name=\"" << outfile << "\" description=\"" << outfile << "\"" << endl;
+	}
+
+	for (vector<string>::iterator iter = chr_list.begin(); iter != chr_list.end(); iter++)
+	{
+		for (vector<Peak>::iterator peakIt = (*peaks)[*iter].begin(); peakIt != (*peaks)[*iter].end(); peakIt++)
+		{
+			out << *iter << "\t" << peakIt->start << "\t" << peakIt->end << "\t.\t" << peakIt->value << endl;
+		}
+	}
+	
+	out.close();
 }
 
 void BedGraph::output(bool ucsc)
 {
 	File::output(ucsc);
 	cerr << "BedGraph output" << endl; 
+
+	ofstream out(outfile);
+
+	if(!out.is_open())
+		throw(1); // throw error
+
+	if (ucsc)
+	{
+		out << "track type=bedGraph name=\"" << outfile << "\" description=\"" << outfile << "\"" << endl;
+	}
+
+	for (vector<string>::iterator iter = chr_list.begin(); iter != chr_list.end(); iter++)
+	{
+		for (vector<Peak>::iterator peakIt = (*peaks)[*iter].begin(); peakIt != (*peaks)[*iter].end(); peakIt++)
+		{
+			out << *iter << "\t" << peakIt->start << "\t" << peakIt->end << "\t" << peakIt->value << endl;
+		}
+	}
+	
+	out.close();
 }

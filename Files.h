@@ -10,7 +10,7 @@ typedef struct
 {
 	int start;
 	int end;
-	double * value;
+	double value;
 } Peak;
 
 bool peakCmp(Peak peak1, Peak peak2);

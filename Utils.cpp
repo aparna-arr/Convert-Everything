@@ -10,9 +10,11 @@ void getInput(int argc, char * argv[], Opts & opt_struct)
 
 	initOpts(opt_struct);
 
-	for (int i = 2; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		curr = string(argv[i]);
+		
+//		cerr << "curr is [" << curr << "] prev is [" << prev << "]" << endl;
 
 		if (curr.find("-") == string::npos) 
 		{
@@ -31,21 +33,24 @@ void getInput(int argc, char * argv[], Opts & opt_struct)
 			}
 			else
 			{
+//			cerr << "on incorrect opt" << endl;
 				parseOpt(prev, curr, opt_struct);
 			}
 		}		
 		else 
 		{
+//			cerr << "in else" << endl;
 			if (i != argc - 1) 
 			{
 				string next = string (argv[i+1]);
+//				cerr << "next is [" << next << "]" << endl;
 				if (next.find("-") == string::npos) 
 				{
 					prev = curr;
 					continue;
 				}
 			}
-
+//			cerr << "on correct opt" << endl;
 			parseOpt(curr, opt_struct);
 		}
 

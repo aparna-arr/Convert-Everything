@@ -4,10 +4,20 @@ using namespace std;
 
 int main(int argc, char * argv[]) 
 {
+//	cerr << "debug(): main(): start main" << endl;
 	try
 	{
 		Opts opt_struct;
+//		cerr << "debug: Main(): before getInput()" << endl;
 		getInput(argc, argv, opt_struct);
+//		cerr << "debug: Main(): after getInput()" << endl;
+/** DEBUG **/
+
+		cerr << "opt struct:" << endl;
+		cerr << "infile: " << opt_struct.infile << endl;
+		cerr << "outfile: " << opt_struct.outfile << endl;
+
+/** END DEBUG **/
 
 		FileInit init(opt_struct.infile, opt_struct.outfile, opt_struct.type, opt_struct.threads_num);
 
