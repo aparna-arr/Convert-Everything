@@ -190,7 +190,6 @@ void FileInit::readInBedGraph(ifstream& fp)
 
 	while(getline(fp, line) && !fp.bad())
 	{
-//		cerr << "debug: readInBedGraph(): line [" << line << "]" << endl;
 		string chr;
 		int start, end;
 		double value;
@@ -203,25 +202,16 @@ void FileInit::readInBedGraph(ifstream& fp)
 			continue;
 		}
 	
-//		cerr << "debug: readInBedGraph(): chr [" << chr << "] start [" << start << "] end [" << end << "] value [" << value << "]" << endl;
-	
 		Peak curr;
 		curr.start = start;
 		curr.end = end;
-		
-//		cerr << "debug: readInBedGraph(): before assign value" << endl;
-	
 		curr.value = value;
-	
-//		cerr << "debug: readInBedGraph(): before push_back()" << endl;	
 		
 		(*peaks)[chr].push_back(curr);	
 	}
 
 	if ((*peaks).empty())	
 		throw (1); // throw error
-	
-	cerr << "end readInBedGraph()"<<endl;
 }
 
 void FileInit::readInSam(ifstream& fp)
@@ -302,13 +292,16 @@ File::File(std::string filename, unordered_map<string,vector<Peak>>* parsed)
 
 void File::output(bool ucsc)
 {
-	cerr << "File output" << endl; 
-
 	if (blacklist_opt)	
 		blacklist_remove();
 
 	if (smooth_opt)
+	{
 		smooth();
+	
+		if (blacklist_opt)
+			blacklist_remove(); // have to rm them again due to smooth
+	}
 
 	if (clean_opt)
 		clean();
@@ -341,7 +334,6 @@ void File::sort_peaks(void)
 
 void File::smooth(void)
 {
-	cerr << "debug: smooth(): start" << endl;
 	int shift_end = smooth_shift - 1;
 
 	for (auto iter = (*peaks).begin(); iter != (*peaks).end(); iter++)
@@ -353,7 +345,10 @@ void File::smooth(void)
 		chr_start = (iter->second).begin()->start;
 		chr_end = ((iter->second).end()-1)->end;
 
-		cerr << "debug: smooth(): circ_ar is size " << smooth_win / smooth_shift << " chr_start is " << chr_start << " chr end is " << chr_end << " chr is " << iter->first <<  " smooth_win is " << smooth_win << endl;
+		int start_win = chr_start / smooth_win * smooth_win - smooth_win;
+
+		if (start_win < 0)
+			start_win = 0;
 
 		double circ_ar[smooth_win / smooth_shift], curr_avg = 0;
 		int circ_index = 0;	
@@ -362,42 +357,23 @@ void File::smooth(void)
 			circ_ar[i] = 0;	
 
 		vector<Peak>::iterator peakIter = (iter->second).begin();	
-		for (int i = 0; i <= ((chr_end+smooth_win)/smooth_win)*smooth_win + smooth_win; i+= smooth_shift)
+		for (int i = start_win; i <= ((chr_end+smooth_win)/smooth_win)*smooth_win + smooth_win; i+= smooth_shift)
 		{
-//			cerr << "debug: smooth(): i is " << i << " chr_start is " << chr_start << " smooth_shift is " << smooth_shift << " smooth_win is " << smooth_win << endl;
-
-//			cerr << "i - chr_start is " << i - chr_start << " (i - chr_start)/smooth_shift is " << (i - chr_start) / smooth_shift << endl;
-
 			circ_index = (i / smooth_shift) % (smooth_win / smooth_shift);
-			cerr << "debug: smooth(): circ_index is " << circ_index << endl;
-			cerr << "debug: smooth(): curr avg is " << curr_avg << endl;
-//			if (circ_index == 0)
-//			{
-			
-			for (int d = 0; d < smooth_win / smooth_shift; d++) 
-				cerr << "current i is " << i << " index " << d << " is [" << circ_ar[d] << "]"<< endl;
-//				if (curr_avg > 0 && i - smooth_win/2 - smooth_shift/2 >= chr_start && i - smooth_win / 2 + smooth_shift/2 <= chr_end)
-				if (curr_avg > 0 && i - smooth_win/2 - smooth_shift/2 >= 0 && i - smooth_win / 2 + smooth_shift/2 <= ((chr_end + smooth_win)/smooth_win)*smooth_win + smooth_win)
-				{
-					
-					Peak tmp;
-					tmp.start = (i - smooth_win/2) - smooth_shift/2;
-					tmp.end = tmp.start + smooth_shift - 1;
-					tmp.value = (curr_avg / (smooth_win - 1));
-//					tmp.value = curr_avg;
-					window_bins.push_back(tmp);
 
-					cerr << "push back peak with value " << tmp.value << endl;
-				}
-//			}
+			if (curr_avg > 0 && i - smooth_win/2 - smooth_shift/2 >= start_win && i - smooth_win / 2 + smooth_shift/2 <= ((chr_end + smooth_win)/smooth_win)*smooth_win + smooth_win)
+			{
+				
+				Peak tmp;
+				tmp.start = (i - smooth_win/2) - smooth_shift/2;
+				tmp.end = tmp.start + smooth_shift - 1;
+				tmp.value = (curr_avg / (smooth_win - 1));
+				window_bins.push_back(tmp);
+			}
 
 			// MUST be above continue and break lines
 			curr_avg -= circ_ar[circ_index];
-	
-			cerr << "debug: smooth(): curr_avg is " << curr_avg << endl;
-	
 			circ_ar[circ_index] = 0;
-
 
 			while(peakIter < (iter->second).end()-1 && peakIter->end < i)
 				peakIter++;
@@ -407,50 +383,26 @@ void File::smooth(void)
 			if ((peakIter == (iter->second).end()-1 && peakIter->end < i ) || i + shift_end < peakIter->start)
 				continue;
 
-//			if (peakIter == (iter->second).end()-1 && peakIter->end < i)
-//				break;
-
-			cerr << "peakIter start is " << peakIter->start << endl;
-//			while (peakIter != (iter->second).end() && peakIter->start < i + shift_end) 
-//			{			
-				if (peakIter->start < i)
-				{
-					if (peakIter->end > i + shift_end)
-					{	
-						circ_ar[circ_index] += peakIter->value * smooth_shift;
-						cerr << "1) Adding [" << peakIter->value * smooth_shift << "] to index " << circ_index << endl;
-						
-					} // if
-					else 
-					{
-						circ_ar[circ_index] += peakIter->value * (peakIter->end - i);
-						cerr << "2) Adding [" << peakIter->value * (peakIter->end - i) << "] to index " << circ_index << endl;
-					} // else
-				} // if
+			if (peakIter->start < i)
+			{
+				if (peakIter->end > i + shift_end)
+					circ_ar[circ_index] += peakIter->value * smooth_shift;
+				else 
+					circ_ar[circ_index] += peakIter->value * (peakIter->end - i);
+			} // if
+			else
+			{
+				if (peakIter->end > i + shift_end)
+					circ_ar[circ_index] += peakIter->value * (i + shift_end - peakIter->start);
 				else
-				{
-					if (peakIter->end > i + shift_end)
-					{
-						circ_ar[circ_index] += peakIter->value * (i + shift_end - peakIter->start);
-						cerr << "3) Adding [" << peakIter->value * (i + shift_end - peakIter->start) << "] to index " << circ_index << endl;
-					} // if
-					else
-					{
-						circ_ar[circ_index] += peakIter->value * (peakIter->end - peakIter->start);
-						cerr << "4) Adding [" << peakIter->value * (peakIter->end - peakIter->start) << "] to index " << circ_index << endl;
-					} // else
-				} // else
+					circ_ar[circ_index] += peakIter->value * (peakIter->end - peakIter->start);
+			} // else
 
-//				peakIter++;
-//			} // while
-/**/
 			curr_avg += circ_ar[circ_index];
 		} // for chrstart -> chrend
 
-		cerr << "debug: smooth():for chr " << iter->first << " window bins size is " << window_bins.size() << endl;	
 		peaks->at(iter->first) = window_bins;	
 	} // for each chr	
-	cerr << "debug: smooth(): end" << endl;
 }
 
 // expect sorted & bed file
