@@ -20,7 +20,7 @@ class File;
 class FileInit
 {
 public:
-	FileInit(std::string infilename, std::string outfilename, Filetype type, int threads = 0);
+	FileInit(std::string infilename, std::string outfilename, Filetype type, int sambinsize, int threads = 0);
 	File * getFileObj(void);
 private: 
 	void readIn(std::string infilename);
@@ -33,6 +33,7 @@ private:
 	std::string outfile;
 	Filetype outfiletype;
 	std::unordered_map<std::string, std::vector<Peak>>* peaks;
+	int sambin;
 };
 
 class File 

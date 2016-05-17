@@ -6,10 +6,11 @@ bool peakCmp(Peak peak1, Peak peak2)
 	return (peak1.start < peak2.start);
 }
 
-FileInit::FileInit(string infilename, string outfilename, Filetype type, int threads)
+FileInit::FileInit(string infilename, string outfilename, Filetype type, int sambinsize, int threads)
 {
 	outfile = outfilename;
 	outfiletype = type;
+	sambin = sambinsize;
 
 	peaks = new unordered_map<string, vector<Peak>>();	
 
@@ -225,7 +226,41 @@ void FileInit::readInBedGraph(ifstream& fp)
 
 void FileInit::readInSam(ifstream& fp)
 {
-	// FIXME do later
+	cerr << "readInSam()" << endl;
+	string line;
+
+	unordered_map<string, unordered_map<int, int>> sam;
+
+	while(getline(fp, line) && !fp.bad())
+	{
+		stringstream ss(line);
+		
+		string trash, chr;
+		int strand, pos;	
+
+		if (ss >> trash >> strand >> chr >> pos)
+		{
+			int bin = pos / sambin;
+
+			if ((sam[chr]).find(bin) == (sam[chr]).end())
+				(sam[chr])[bin] = 1;
+			else
+				(sam[chr])[bin]++;
+		}
+	}
+
+	for (auto iter = sam.begin(); iter != sam.end(); iter++)
+	{
+		for (auto it = sam[iter->first].begin(); it != sam[iter->first].end(); it++)
+		{
+			Peak tmp;
+			tmp.start = it->first * sambin;
+			tmp.end = tmp.start + sambin - 1;
+			tmp.value = it->second;
+
+			(*peaks)[iter->first].push_back(tmp);
+		}
+	}
 }
 
 
@@ -479,7 +514,7 @@ void File::clean(void)
 
 	for (auto iter = (*peaks).begin(); iter != (*peaks).end(); iter++)
 	{
-		vector<Peak>::iterator eraseStart;
+		vector<Peak>::iterator eraseStart = (iter->second).end();
 
 		for (vector<Peak>::iterator pIter = (iter->second).begin(); pIter != (iter->second).end(); pIter++)
 		{

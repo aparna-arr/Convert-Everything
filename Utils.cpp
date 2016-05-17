@@ -112,6 +112,14 @@ void parseOpt(string option, string arg, Opts & opt_struct)
 		else
 			throw invalid_argument("Your outfile type [" + arg + "] is not a valid argument to -c!\n");
 	}
+	else if (option.compare("--sambin") == 0)
+	{
+		stringstream ss(arg);
+		
+		if (!(ss >> opt_struct.sambin))
+			throw invalid_argument("Your argument to --sambin [" + arg + "] is not a valid INT!\n");
+			
+	}
 	else if (option.compare("--clean") == 0) 
 	{
 		opt_struct.clean = true;

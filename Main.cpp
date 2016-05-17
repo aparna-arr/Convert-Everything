@@ -19,7 +19,7 @@ int main(int argc, char * argv[])
 
 /** END DEBUG **/
 
-		FileInit init(opt_struct.infile, opt_struct.outfile, opt_struct.type, opt_struct.threads_num);
+		FileInit init(opt_struct.infile, opt_struct.outfile, opt_struct.type, opt_struct.sambin, opt_struct.threads_num);
 
 		File * myFile = init.getFileObj();
 /*
@@ -52,6 +52,9 @@ int main(int argc, char * argv[])
 		if (e == 1) 
 		{
 			string usagestr = "usage: convert [optional] -i <STRING: input filename> -c <STRING: filetype to convert TO> -o <STRING: output filename>\n";
+			usagestr += "\nIF INPUT FILETYPE IS SAM\n";
+			usagestr += "THEN --sambin is REQUIRED\n";
+			usagestr += "\n--sambin <INT: bin size> : bin size for sam file conversions.\n";
 			usagestr += "\n-c options:\n";
 			usagestr += "\twig: variableStep wig file\n";
 			usagestr += "\tbed: 3 column bed file\n";

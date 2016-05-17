@@ -30,6 +30,8 @@ enum Opt
 
 typedef struct 
 {
+	int sambin;	
+
 	std::string infile;
 	std::string outfile;
 	Filetype type;
