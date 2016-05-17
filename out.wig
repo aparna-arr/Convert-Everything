@@ -1,0 +1,12 @@
+track type=wiggle_0 name="out.wig" description="out.wig"
+variableStep chrom=chr1 span=99
+100	10
+300	20
+variableStep chrom=chr1 span=199
+400	10
+600	5
+variableStep chrom=chr2 span=99
+300	1
+400	2
+variableStep chrom=chr2 span=499
+500	40

@@ -13,9 +13,9 @@ int main(int argc, char * argv[])
 //		cerr << "debug: Main(): after getInput()" << endl;
 /** DEBUG **/
 
-		cerr << "opt struct:" << endl;
-		cerr << "infile: " << opt_struct.infile << endl;
-		cerr << "outfile: " << opt_struct.outfile << endl;
+//		cerr << "opt struct:" << endl;
+//		cerr << "infile: " << opt_struct.infile << endl;
+//		cerr << "outfile: " << opt_struct.outfile << endl;
 
 /** END DEBUG **/
 

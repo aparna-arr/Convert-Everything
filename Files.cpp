@@ -190,7 +190,7 @@ void FileInit::readInBedGraph(ifstream& fp)
 
 	while(getline(fp, line) && !fp.bad())
 	{
-		cerr << "debug: readInBedGraph(): line [" << line << "]" << endl;
+//		cerr << "debug: readInBedGraph(): line [" << line << "]" << endl;
 		string chr;
 		int start, end;
 		double value;
@@ -203,17 +203,17 @@ void FileInit::readInBedGraph(ifstream& fp)
 			continue;
 		}
 	
-		cerr << "debug: readInBedGraph(): chr [" << chr << "] start [" << start << "] end [" << end << "] value [" << value << "]" << endl;
+//		cerr << "debug: readInBedGraph(): chr [" << chr << "] start [" << start << "] end [" << end << "] value [" << value << "]" << endl;
 	
 		Peak curr;
 		curr.start = start;
 		curr.end = end;
 		
-		cerr << "debug: readInBedGraph(): before assign value" << endl;
+//		cerr << "debug: readInBedGraph(): before assign value" << endl;
 	
 		curr.value = value;
 	
-		cerr << "debug: readInBedGraph(): before push_back()" << endl;	
+//		cerr << "debug: readInBedGraph(): before push_back()" << endl;	
 		
 		(*peaks)[chr].push_back(curr);	
 	}
@@ -269,8 +269,6 @@ File * FileInit::getFileObj(void)
 	switch(outfiletype)
 	{	
 		case WIG: return new Wig(outfile, peaks);
-		break;
-		case BED: return new Bed(outfile, peaks);
 		break;
 		case BED5: return new Bed5(outfile, peaks);
 		break;
@@ -343,6 +341,7 @@ void File::sort_peaks(void)
 
 void File::smooth(void)
 {
+	cerr << "debug: smooth(): start" << endl;
 	int shift_end = smooth_shift - 1;
 
 	for (auto iter = (*peaks).begin(); iter != (*peaks).end(); iter++)
@@ -354,6 +353,8 @@ void File::smooth(void)
 		chr_start = (iter->second).begin()->start;
 		chr_end = ((iter->second).end()-1)->end;
 
+		cerr << "debug: smooth(): circ_ar is size " << smooth_win / smooth_shift << " chr_start is " << chr_start << " chr end is " << chr_end << " chr is " << iter->first <<  " smooth_win is " << smooth_win << endl;
+
 		double circ_ar[smooth_win / smooth_shift], curr_avg = 0;
 		int circ_index = 0;	
 		
@@ -361,69 +362,95 @@ void File::smooth(void)
 			circ_ar[i] = 0;	
 
 		vector<Peak>::iterator peakIter = (iter->second).begin();	
-		for (int i = chr_start; i < chr_end; i+= smooth_shift)
+		for (int i = 0; i <= ((chr_end+smooth_win)/smooth_win)*smooth_win + smooth_win; i+= smooth_shift)
 		{
-			circ_index = ((i - chr_start) / smooth_shift) % smooth_win;
-			if (circ_index == 0)
-			{
-				if (curr_avg > 0)
+//			cerr << "debug: smooth(): i is " << i << " chr_start is " << chr_start << " smooth_shift is " << smooth_shift << " smooth_win is " << smooth_win << endl;
+
+//			cerr << "i - chr_start is " << i - chr_start << " (i - chr_start)/smooth_shift is " << (i - chr_start) / smooth_shift << endl;
+
+			circ_index = (i / smooth_shift) % (smooth_win / smooth_shift);
+			cerr << "debug: smooth(): circ_index is " << circ_index << endl;
+			cerr << "debug: smooth(): curr avg is " << curr_avg << endl;
+//			if (circ_index == 0)
+//			{
+			
+			for (int d = 0; d < smooth_win / smooth_shift; d++) 
+				cerr << "current i is " << i << " index " << d << " is [" << circ_ar[d] << "]"<< endl;
+//				if (curr_avg > 0 && i - smooth_win/2 - smooth_shift/2 >= chr_start && i - smooth_win / 2 + smooth_shift/2 <= chr_end)
+				if (curr_avg > 0 && i - smooth_win/2 - smooth_shift/2 >= 0 && i - smooth_win / 2 + smooth_shift/2 <= ((chr_end + smooth_win)/smooth_win)*smooth_win + smooth_win)
 				{
+					
 					Peak tmp;
-					tmp.start = (i - smooth_win)/2 - smooth_shift/2;
-					tmp.end = tmp.start + smooth_shift/2 - 1;
-					tmp.value = (curr_avg / smooth_win - 1);
+					tmp.start = (i - smooth_win/2) - smooth_shift/2;
+					tmp.end = tmp.start + smooth_shift - 1;
+					tmp.value = (curr_avg / (smooth_win - 1));
+//					tmp.value = curr_avg;
 					window_bins.push_back(tmp);
+
+					cerr << "push back peak with value " << tmp.value << endl;
 				}
-			}
+//			}
 
 			// MUST be above continue and break lines
 			curr_avg -= circ_ar[circ_index];
+	
+			cerr << "debug: smooth(): curr_avg is " << curr_avg << endl;
+	
 			circ_ar[circ_index] = 0;
 
-			if (i + shift_end < peakIter->start)
-				continue;
 
 			while(peakIter < (iter->second).end()-1 && peakIter->end < i)
 				peakIter++;
 			//   ====
 			//-----
 
-			if (peakIter == (iter->second).end()-1 && peakIter->end < i)
-				break;
+			if ((peakIter == (iter->second).end()-1 && peakIter->end < i ) || i + shift_end < peakIter->start)
+				continue;
 
-			while (peakIter != (iter->second).end() && peakIter->start < i + shift_end) 
-			{			
+//			if (peakIter == (iter->second).end()-1 && peakIter->end < i)
+//				break;
+
+			cerr << "peakIter start is " << peakIter->start << endl;
+//			while (peakIter != (iter->second).end() && peakIter->start < i + shift_end) 
+//			{			
 				if (peakIter->start < i)
 				{
 					if (peakIter->end > i + shift_end)
 					{	
-						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * shift_end;
+						circ_ar[circ_index] += peakIter->value * smooth_shift;
+						cerr << "1) Adding [" << peakIter->value * smooth_shift << "] to index " << circ_index << endl;
+						
 					} // if
 					else 
 					{
-						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * (peakIter->end - i);
+						circ_ar[circ_index] += peakIter->value * (peakIter->end - i);
+						cerr << "2) Adding [" << peakIter->value * (peakIter->end - i) << "] to index " << circ_index << endl;
 					} // else
 				} // if
 				else
 				{
 					if (peakIter->end > i + shift_end)
 					{
-						circ_ar[circ_index] += peakIter->value / (double) (peakIter->end - peakIter->start) * (i + shift_end - peakIter->start);
+						circ_ar[circ_index] += peakIter->value * (i + shift_end - peakIter->start);
+						cerr << "3) Adding [" << peakIter->value * (i + shift_end - peakIter->start) << "] to index " << circ_index << endl;
 					} // if
 					else
 					{
-						circ_ar[circ_index] += peakIter->value;
+						circ_ar[circ_index] += peakIter->value * (peakIter->end - peakIter->start);
+						cerr << "4) Adding [" << peakIter->value * (peakIter->end - peakIter->start) << "] to index " << circ_index << endl;
 					} // else
 				} // else
 
-				peakIter++;
-			} // while
-
+//				peakIter++;
+//			} // while
+/**/
 			curr_avg += circ_ar[circ_index];
 		} // for chrstart -> chrend
-	
+
+		cerr << "debug: smooth():for chr " << iter->first << " window bins size is " << window_bins.size() << endl;	
 		peaks->at(iter->first) = window_bins;	
 	} // for each chr	
+	cerr << "debug: smooth(): end" << endl;
 }
 
 // expect sorted & bed file
@@ -561,13 +588,6 @@ void Wig::output(bool ucsc)
 	}	
 
 	out.close(); 
-}
-
-// FIXME remove this option
-void Bed::output(bool ucsc)
-{
-	File::output(ucsc);
-	cerr << "Bed output" << endl; 
 }
 
 void Bed5::output(bool ucsc)
