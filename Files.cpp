@@ -225,17 +225,21 @@ void FileInit::readInSam(ifstream& fp)
 	{
 		stringstream ss(line);
 		
-		string trash, chr;
+		string trash, chr, seqstr;
 		int strand, pos;	
 
-		if (ss >> trash >> strand >> chr >> pos)
+		if (ss >> trash >> strand >> chr >> pos >> trash >> trash >> trash >> trash >> trash >> seqstr)
 		{
-			int bin = pos / sambin;
+			int binstart = pos / sambin;
+			int binend = ( pos + seqstr.length() ) / sambin;
 
-			if ((sam[chr]).find(bin) == (sam[chr]).end())
-				(sam[chr])[bin] = 1;
-			else
-				(sam[chr])[bin]++;
+			for (int bin = binstart; bin <= binend; bin += sambin)
+			{
+				if ((sam[chr]).find(bin) == (sam[chr]).end())
+					(sam[chr])[bin] = 1;
+				else
+					(sam[chr])[bin]++;
+			}
 		}
 	}
 
@@ -527,6 +531,7 @@ void Wig::output(bool ucsc)
 	for (vector<string>::iterator iter = chr_list.begin(); iter != chr_list.end(); iter++)
 	{
 		int span = -1;
+		cerr << "total peaks for chr " << *iter << " are " << (*peaks)[*iter].size() << endl;
 		for (vector<Peak>::iterator peakIt = (*peaks)[*iter].begin(); peakIt != (*peaks)[*iter].end(); peakIt++)
 		{
 			if (peakIt->end - peakIt->start != span)
