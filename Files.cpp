@@ -412,6 +412,7 @@ void File::smooth(void)
 // expect sorted & bed file
 void File::blacklist_remove(void) 
 {
+	cerr << "start of blacklist_remove()" << endl;
 	ifstream bfile(blacklistfile);
 	
 	if (!bfile.is_open())
@@ -459,14 +460,11 @@ void File::blacklist_remove(void)
 			while(peakIter < (iter->second).end() - 1 && it->start > peakIter->end)
 				peakIter++;
 
-
-			if (it->start <= peakIter->end && it->end >= peakIter->start)
-			{
-				 // remove this one
+			while(peakIter != (iter->second.end()) && it->end > peakIter->start && it->start < peakIter->end)
 				 peakIter = (iter->second).erase(peakIter);
-			}
 		}
 	}
+	cerr << "end of blacklist_remove()" << endl;
 }
 
 void File::clean(void)
@@ -531,7 +529,7 @@ void Wig::output(bool ucsc)
 	for (vector<string>::iterator iter = chr_list.begin(); iter != chr_list.end(); iter++)
 	{
 		int span = -1;
-		cerr << "total peaks for chr " << *iter << " are " << (*peaks)[*iter].size() << endl;
+//		cerr << "total peaks for chr " << *iter << " are " << (*peaks)[*iter].size() << endl;
 		for (vector<Peak>::iterator peakIt = (*peaks)[*iter].begin(); peakIt != (*peaks)[*iter].end(); peakIt++)
 		{
 			if (peakIt->end - peakIt->start != span)
