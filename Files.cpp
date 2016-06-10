@@ -220,12 +220,12 @@ void FileInit::readInSam(ifstream& fp)
 	string line;
 
 	unordered_map<string, unordered_map<int, int>> sam;
-	int linecount = 0;
+//	int linecount = 0;
 
 	while(getline(fp, line) && !fp.bad())
 	{
-		linecount++;
-		cout << "line is " << linecount << endl;
+//		linecount++;
+//		cout << "line is " << linecount << endl;
 		stringstream ss(line);
 		
 		string trash, chr, seqstr;
