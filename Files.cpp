@@ -220,9 +220,12 @@ void FileInit::readInSam(ifstream& fp)
 	string line;
 
 	unordered_map<string, unordered_map<int, int>> sam;
+	int linecount = 0;
 
 	while(getline(fp, line) && !fp.bad())
 	{
+		linecount++;
+		cout << "line is " << linecount << endl;
 		stringstream ss(line);
 		
 		string trash, chr, seqstr;
@@ -233,7 +236,8 @@ void FileInit::readInSam(ifstream& fp)
 			int binstart = pos / sambin;
 			int binend = ( pos + seqstr.length() ) / sambin;
 
-			for (int bin = binstart; bin <= binend; bin += sambin)
+//			cerr << "binstart [" << binstart << "] binend [" << binend << "] seqlen [" << seqstr.length() << "] pos [" << pos << "]" << endl;
+			for (int bin = binstart; bin <= binend; bin++)
 			{
 				if ((sam[chr]).find(bin) == (sam[chr]).end())
 					(sam[chr])[bin] = 1;

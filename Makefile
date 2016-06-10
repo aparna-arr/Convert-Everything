@@ -2,7 +2,7 @@ CXX := g++
 CXXFLAGS := -Wall -std=c++11 -pthread -g
 OBJECTS := Main.o Utils.o Files.o
 
-convert: $(OBJECTS)
+convert-everything: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@
 
 Main.o: Main.cpp Utils.h Files.h
@@ -15,4 +15,4 @@ Files.o: Files.cpp Files.h
 	$(CXX) $(CXXFLAGS) -c Files.cpp
 
 clean: 
-	rm -f $(OBJECTS) convert
+	rm -f $(OBJECTS) convert-everything
