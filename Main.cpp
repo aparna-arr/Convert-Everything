@@ -34,13 +34,13 @@ int main(int argc, char * argv[])
 	{
 		if (e == 1) 
 		{
-			string usagestr = "usage: convert [optional] -i <STRING: input filename> -c <STRING: filetype to convert TO> -o <STRING: output filename>\n";
+			string usagestr = "usage: convert-everything [optional] -i <STRING: input filename> -c <STRING: filetype to convert TO> -o <STRING: output filename>\n";
 			usagestr += "\nIF INPUT FILETYPE IS SAM\n";
 			usagestr += "THEN --sambin is REQUIRED\n";
 			usagestr += "\n--sambin <INT: bin size> : bin size for sam file conversions.\n";
 			usagestr += "\n-c options:\n";
 			usagestr += "\twig: variableStep wig file\n";
-			usagestr += "\tbed: 3 column bed file\n";
+//			usagestr += "\tbed: 3 column bed file\n";
 			usagestr += "\tbed5: 5 column bed file (includes score and name (\".\"))\n";
 			usagestr += "\tbg: 4 column bedgraph format\n";
 			usagestr += "\n[optional]:\n";

@@ -416,7 +416,7 @@ void File::smooth(void)
 // expect sorted & bed file
 void File::blacklist_remove(void) 
 {
-	cerr << "start of blacklist_remove()" << endl;
+//	cerr << "start of blacklist_remove()" << endl;
 	ifstream bfile(blacklistfile);
 	
 	if (!bfile.is_open())
@@ -468,7 +468,7 @@ void File::blacklist_remove(void)
 				 peakIter = (iter->second).erase(peakIter);
 		}
 	}
-	cerr << "end of blacklist_remove()" << endl;
+//	cerr << "end of blacklist_remove()" << endl;
 }
 
 void File::clean(void)

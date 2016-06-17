@@ -12,7 +12,7 @@ enum Filetype
 {	
 	SAM,
 	WIG,
-	BED,
+//	BED,
 	BED5,
 	BEDGRAPH,
 	ENUM_FILETYPE_SIZE

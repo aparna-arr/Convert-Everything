@@ -103,8 +103,8 @@ void parseOpt(string option, string arg, Opts & opt_struct)
 	{
 		if (arg.compare("wig") == 0)
 			opt_struct.type = WIG;
-		else if (arg.compare("bed") == 0)
-			opt_struct.type = BED;
+//		else if (arg.compare("bed") == 0)
+//			opt_struct.type = BED;
 		else if (arg.compare("bed5") == 0)
 			opt_struct.type = BED5;
 		else if (arg.compare("bg") == 0)
