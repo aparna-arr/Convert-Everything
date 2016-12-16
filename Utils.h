@@ -8,6 +8,8 @@
 #include<sstream>
 #include<stdexcept>
 
+std::string conv (int num);
+
 enum Filetype 
 {	
 	SAM,

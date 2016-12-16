@@ -1,6 +1,12 @@
 #include"Utils.h"
 using namespace std;
 
+string conv(int num) {
+	stringstream s;
+	s << num;
+	return s.str();
+}
+
 void getInput(int argc, char * argv[], Opts & opt_struct)
 {
 	if (argc < 6)

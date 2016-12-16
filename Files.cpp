@@ -63,12 +63,13 @@ void FileInit::readIn(std::string infilename)
 			else 
 			{
 				stringstream ss2(line);
-	
+/*	
 				if (ss2 >> chr >> start >> end >> name >> value)
 				{
 					detectFileType = true;
 					type = BED;
 				}
+*/
 				// else throw error
 			}
 		}
@@ -86,8 +87,8 @@ void FileInit::readIn(std::string infilename)
 			break;
 			case WIG: readInWig(infile);
 			break;
-			case BED: readInBed(infile);
-			break;
+//			case BED: readInBed(infile);
+//			break;
 			case BEDGRAPH: readInBedGraph(infile);
 			break;
 			default: throw(1); // throw error
